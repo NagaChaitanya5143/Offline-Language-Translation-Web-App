@@ -1,0 +1,12 @@
+function translateWord() {
+    let word = document.getElementById("inputWord").value;
+
+    fetch(`http://localhost:8080/translate?word=${word}`)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById("result").innerText = data;
+        })
+        .catch(err => {
+            document.getElementById("result").innerText = "Error connecting to server.";
+        });
+}
