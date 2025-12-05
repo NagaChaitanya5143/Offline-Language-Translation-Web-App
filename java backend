@@ -1,0 +1,85 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+// ------------------------------
+// TRIE DATA STRUCTURE (DSA)
+// ------------------------------
+class TrieNode {
+    Map<Character, TrieNode> children = new HashMap<>();
+    boolean endOfWord = false;
+    String translation = "";
+}
+
+class Trie {
+    TrieNode root = new TrieNode();
+
+    public void insert(String word, String translated) {
+        TrieNode curr = root;
+        for (char ch : word.toCharArray()) {
+            curr.children.putIfAbsent(ch, new TrieNode());
+            curr = curr.children.get(ch);
+        }
+        curr.endOfWord = true;
+        curr.translation = translated;
+    }
+
+    public String search(String word) {
+        TrieNode curr = root;
+        for (char ch : word.toLowerCase().toCharArray()) {
+            if (!curr.children.containsKey(ch)) return "No translation found!";
+            curr = curr.children.get(ch);
+        }
+        return curr.endOfWord ? curr.translation : "No translation found!";
+    }
+}
+
+// ------------------------------
+// SIMPLE HTTP SERVER
+// ------------------------------
+public class TranslatorServer {
+
+    static Trie dictionary = new Trie();
+
+    public static void loadSampleData() {
+        dictionary.insert("hello", "नमस्ते");
+        dictionary.insert("cat", "बिल्ली");
+        dictionary.insert("dog", "कुत्ता");
+        dictionary.insert("apple", "सेब");
+    }
+
+    public static void main(String[] args) throws Exception {
+        loadSampleData();
+        ServerSocket server = new ServerSocket(8080);
+        System.out.println("Server running on http://localhost:8080");
+
+        while (true) {
+            Socket socket = server.accept();
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            OutputStream out = socket.getOutputStream();
+
+            String request = in.readLine();
+            if (request == null) continue;
+
+            // Parse GET request: /translate?word=hello
+            if (request.startsWith("GET")) {
+                String[] parts = request.split(" ");
+                String path = parts[1];
+
+                if (path.startsWith("/translate")) {
+                    String word = path.split("=")[1];
+                    String translated = dictionary.search(word.toLowerCase());
+
+                    String response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\n" + translated;
+                    out.write(response.getBytes());
+                } else {
+                    String response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nTranslator Server Running!";
+                    out.write(response.getBytes());
+                }
+            }
+
+            out.flush();
+            socket.close();
+        }
+    }
+}
